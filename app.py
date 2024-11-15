@@ -8,8 +8,14 @@ app = Flask(__name__)
 
 app.config['TEMPLATES_AUTO_RELOAD'] =  True
 
-@app.route('/')
+@app.route('/', methods=["GET", "POST"])
 def dashboard():
+    if request.method == 'POST':
+        grade = request.form.get('grade')
+        term = request.form.get('term')
+        
+        return render_template("dashboard.html")
+    
     return render_template("dashboard.html")
 
 @app.route('/grades')
@@ -27,3 +33,4 @@ def stats():
 @app.route('/settings')
 def settings():
     return render_template("settings.html")
+
