@@ -1,7 +1,11 @@
 import requests
 
-from flask import redirect, render_template, session
+from flask import Flask, redirect, render_template, session, request, url_for
+from cs50 import SQL
 from functools import wraps
+
+app = Flask(__name__)
+db = SQL("sqlite:///gradeflow.db")
 
 def no_subjects(func):
     @wraps(func)
