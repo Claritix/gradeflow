@@ -9,38 +9,101 @@
 
 
 {% block main %}
-<form id="selector1" action="/" method="post">
-    <div class="dropdown">
-        <a class="btn btn-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Grade
-        </a>
-        <ul class="dropdown-menu" id="grade-selector">
-            <li><a class="dropdown-item" onclick="setDropdownValue('grade', '{{ grade }}')">{{ grade }}</a></li>
-        </ul>
-    </div>
+<div class="main1">
+    <form id="selector1" action="/" method="post">
+        <div class="dropdown">
+            <a class="btn btn-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Grade {{ selected_grade }}
+            </a>
+            <ul class="dropdown-menu" id="grade-selector">
+                {% for grade in grades %}
+                    <li><a class="dropdown-item" onclick="setDropdownValue('grade', '{{ grade }}')">Grade {{ grade }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
 
-    <div class="dropdown">
-        <a class="btn btn-secondary dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Term
-        </a>
-        <ul class="dropdown-menu" id="term-selector">
-            <li><a class="dropdown-item" onclick="setDropdownValue('term', '{{ term }}')"> {{ term }}</a></li>
-        </ul>
-    </div>
-    <input type="hidden" name="grade" id="grade-input">
-    <input type="hidden" name="term" id="term-input">
-</form>
-
-<div style="margin-top: 20px;"></div>
+        <div class="dropdown">
+            <a class="btn btn-secondary dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Term {{ selected_term }}
+            </a>
+            <ul class="dropdown-menu" id="term-selector">
+                {% for term in terms %}
+                    <li><a class="dropdown-item" onclick="setDropdownValue('term', '{{ term }}')">Term {{ term }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <input type="hidden" name="grade" id="grade-input" value="{{ selected_grade }}">
+        <input type="hidden" name="term" id="term-input" value="{{ selected_term }}">
+    </form>
+    <button type="button" class="btn btn-outline-primary btn-lg edit" onclick="window.location.href='/grades';">EDIT</button>
+</div>
+<div style="margin-top: 10px;"></div>
 
 
 <!-- Cards for grade information -->
 <!-- TODO: Add the templates from the backend -->
-<div class="card">
-    <div class="card-body">
-      <h3 class="card-title">Total Subjects</h3>
-      <p class="card-text">{{ subject_count }}</p>
+<div class="info">
+    <div class="card">
+        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
+          <h3 class="card-title">Total Subjects</h3>
+          <span class="badge bg-primary rounded-pill card-text align-items-center">{{ subject_count }}</span>
+        </div>
+      </div>
+    <div class="card">
+        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
+          <h3 class="card-title">Total Marks</h3>
+          <span class="badge bg-primary rounded-pill card-text align-items-center">{{ total_marks }}</span>
+        </div>
     </div>
-  </div>
+    <div class="card">
+        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
+          <h3 class="card-title">Average Marks</h3>
+          <span class="badge bg-primary rounded-pill card-text align-items-center">{{ avg_marks }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="info">
+    <div class=card>
+        <h3 class="card-title">Best Subjects</h3>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for subject in best_subjects %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ subject['subject'].capitalize() }}
+                        <span class="badge bg-primary rounded-pill">{{ subject['score'] }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class=card>
+        <h3 class="card-title">Worst Subjects</h3>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for subject in worst_subjects %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ subject['subject'].capitalize() }}
+                        <span class="badge bg-primary rounded-pill">{{ subject['score'] }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class=card>
+        <h3 class="card-title">Important Subjects</h3>
+        <div class="card-body">
+            <ul class="list-group">
+                {% for subject in important_subjects %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ subject['subject'].capitalize() }}
+                        <span class="badge bg-primary rounded-pill">{{ subject['score'] }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 

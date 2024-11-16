@@ -6,13 +6,37 @@ body {
     display: flex;
 }
 
+.main1 {
+    display: flex;
+}
+
+.edit {
+    margin-left: 15px;
+    margin-top: 10px;
+    
+    
+}
+
+.custom-alert {
+    max-width: 1200px; 
+    width: 100%;     
+    padding: 20px;     
+    margin: 0 auto;   
+    border-radius: 10px;  
+    font-size: 2em;
+}
+
+.alert-heading {
+    font-size: 2.5em;
+}
+
 .dropdown-toggle {
     font-size: 20px;
     padding: 8px 50px;
 }
 
 .card {
-    margin-top: 20px;
+    margin-top: 10px;
     margin-left: 20px;
     width: 25%;
     border-radius: 35px;
@@ -21,16 +45,34 @@ body {
 .card-title {
     font-size: 2em;
     text-align: center;
-    margin-bottom: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding-bottom: 10px;
 }
 
 .card-text {
-    text-align: center;
-    font-size: 4em;
+    text-align: center !important;
+    font-size: 3em;
+}
+
+.info {
+    display: flex;
 }
 
 .dropdown {
     margin-left: 10px;
     margin-top: 10px;
     
+}
+
+.list-group-item {
+    font-size: 1.5em;
+}
+
+.scorecard1 {
+    display: flex;
+}
+
+.score {
+    text-align: right !important;
 }
