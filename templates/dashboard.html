@@ -43,30 +43,30 @@
 <!-- Cards for grade information -->
 <!-- TODO: Add the templates from the backend -->
 <div class="info">
-    <div class="card">
-        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
+    <div class="card c">
+        <div class="card-body cb text-center d-flex flex-column justify-content-center align-items-center">
           <h3 class="card-title">Total Subjects</h3>
-          <span class="badge bg-primary rounded-pill card-text align-items-center">{{ subject_count }}</span>
+          <span class="badge bg-primary rounded-pill card-text ct align-items-center">{{ subject_count }}</span>
         </div>
       </div>
-    <div class="card">
-        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
-          <h3 class="card-title">Total Marks</h3>
-          <span class="badge bg-primary rounded-pill card-text align-items-center">{{ total_marks }}</span>
+    <div class="card c">
+        <div class="card-body cb text-center d-flex flex-column justify-content-center align-items-center">
+          <h3 class="card-title ctitle">Total Marks</h3>
+          <span class="badge bg-primary rounded-pill card-text ct align-items-center">{{ total_marks }}</span>
         </div>
     </div>
-    <div class="card">
-        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
-          <h3 class="card-title">Average Marks</h3>
-          <span class="badge bg-primary rounded-pill card-text align-items-center">{{ avg_marks }}</span>
+    <div class="card c">
+        <div class="card-body cb text-center d-flex flex-column justify-content-center align-items-center">
+          <h3 class="card-title ctitle">Average Marks</h3>
+          <span class="badge bg-primary rounded-pill card-text ct align-items-center">{{ avg_marks }}</span>
         </div>
     </div>
 </div>
 
 <div class="info">
-    <div class=card>
-        <h3 class="card-title">Best Subjects</h3>
-        <div class="card-body">
+    <div class="card c">
+        <h3 class="card-title ctitle">Best Subjects</h3>
+        <div class="card-body cb">
             <ul class="list-group">
                 {% for subject in best_subjects %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -77,9 +77,9 @@
             </ul>
         </div>
     </div>
-    <div class=card>
-        <h3 class="card-title">Worst Subjects</h3>
-        <div class="card-body">
+    <div class="card c">
+        <h3 class="card-title ct">Worst Subjects</h3>
+        <div class="card-body cb">
             <ul class="list-group">
                 {% for subject in worst_subjects %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -90,9 +90,9 @@
             </ul>
         </div>
     </div>
-    <div class=card>
-        <h3 class="card-title">Important Subjects</h3>
-        <div class="card-body">
+    <div class=card c>
+        <h3 class="card-title ct">Important Subjects</h3>
+        <div class="card-body cb">
             <ul class="list-group">
                 {% for subject in important_subjects %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">

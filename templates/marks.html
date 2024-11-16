@@ -9,5 +9,70 @@
 
 
 {% block main %}
-    <h1>Marks</h1>
+<div class="main1">
+    <form id="selector1" action="/marks" method="post">
+        <div class="dropdown">
+            <a class="btn btn-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Grade {{ selected_grade }}
+            </a>
+            <ul class="dropdown-menu" id="grade-selector">
+                {% for grade in grades %}
+                    <li><a class="dropdown-item" onclick="setDropdownValue('grade', '{{ grade.grade }}')">Grade {{ grade.grade }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <a class="btn btn-secondary dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Term {{ selected_term }}
+            </a>
+            <ul class="dropdown-menu" id="term-selector">
+                {% for term in terms %}
+                    <li><a class="dropdown-item" onclick="setDropdownValue('term', '{{ term.term }}')">Term {{ term.term }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <input type="hidden" name="grade" id="grade-input" value="{{ selected_grade }}">
+        <input type="hidden" name="term" id="term-input" value="{{ selected_term }}">
+    </form>
+    <button type="button" class="btn btn-outline-primary btn-lg edit" onclick="window.location.href='/subjects';">EDIT</button>
+</div>
+
+
+<div style="margin-left: 10px;">
+    {% if selected_grade and selected_term %}
+    <h3 class="mt-4">Enter Marks for Subjects in Grade {{ selected_grade }}</h3>
+    
+    <form action="/submit-marks" method="POST">
+        <div class="card-deck">
+            {% for subject in subjects %}
+            <div class="card mb-3">
+                <div class="card-body d-flex align-items-center">
+                    <!-- Subject Name -->
+                    <div class="col-md-8">
+                        <h5 class="card-title">{{ subject.subject_name.capitalize() }}</h5>
+                    </div>
+                    <!-- Input Field for Marks -->
+                    <div class="col-md-4">
+                        <input type="number" id="subject_{{ subject.subject_id }}" 
+                               name="marks_{{ subject.subject_id }}" 
+                               class="form-control" 
+                               placeholder="0" required>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <button type="submit" class="btn btn-success btn-lg mt-3">Submit Marks</button>
+    </form>
+
+    <button type="button" class="btn btn-outline-primary btn-lg edit mt-3" 
+            onclick="window.location.href='/subjects';">EDIT</button>
+    
+    {% else %}
+        <p>Choose a grade and a term to add marks into.</p>
+    {% endif %}
+</div>
+
 {% endblock %}

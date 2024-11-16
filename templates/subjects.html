@@ -57,7 +57,7 @@
   <ul class="list-group">
     {% for subject in subjects %}
       <li class="list-group-item d-flex justify-content-between align-items-center">
-          {{ subject.subject.capitalize() }}
+          {{ subject.subject_name.capitalize() }}
           <div class="btn-group">
             <form action="/del-subject" method="post">
                 <input type="hidden" name="grade" value="{{ selected_grade }}">

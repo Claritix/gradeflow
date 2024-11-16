@@ -35,14 +35,14 @@ body {
     padding: 8px 50px;
 }
 
-.card {
+.c {
     margin-top: 10px;
     margin-left: 20px;
     width: 25%;
     border-radius: 35px;
 }
 
-.card-title {
+.ctitle {
     font-size: 2em;
     text-align: center;
     margin-top: 5px;
@@ -50,7 +50,7 @@ body {
     padding-bottom: 10px;
 }
 
-.card-text {
+.ct {
     text-align: center !important;
     font-size: 3em;
 }

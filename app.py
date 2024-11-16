@@ -131,8 +131,8 @@ def dashboard():
             term_id = term_id[0]['term_id']
 
         if grade and term:
-            totalSubjects = db.execute("SELECT COUNT(subject) FROM subjects WHERE grade_id=?", grade_id)
-            totalSubjects = totalSubjects[0]['COUNT(subject)']
+            totalSubjects = db.execute("SELECT COUNT(subject_name) FROM subjects WHERE grade_id=?", grade_id)
+            totalSubjects = totalSubjects[0]['COUNT(subject_name)']
 
             totalMarks = db.execute("SELECT sum(score) FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id=?", grade_id, term_id)
             totalMarks = totalMarks[0]['sum(score)']
@@ -140,11 +140,11 @@ def dashboard():
             avgMarks = db.execute("SELECT avg(score) FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id=?", grade_id, term_id)
             avgMarks = avgMarks[0]['avg(score)']
 
-            bestSubjects = db.execute("SELECT subject, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score DESC LIMIT 3", grade_id, term_id)
+            bestSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score DESC LIMIT 3", grade_id, term_id)
             
-            worstSubjects = db.execute("SELECT subject, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score ASC LIMIT 3", grade_id, term_id)
+            worstSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score ASC LIMIT 3", grade_id, term_id)
             
-            importantSubjects = db.execute("SELECT subject, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? AND important = 1 LIMIT 3", grade_id, term_id) 
+            importantSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? AND important = 1 LIMIT 3", grade_id, term_id) 
 
             return render_template("dashboard.html", 
                                    grades=grades, terms=terms, selected_grade=grade, selected_term=term, 
@@ -265,7 +265,7 @@ def subjects():
         grade_id = grade_id[0]['grade_id']
         terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
 
-        subjects = db.execute("SELECT subject_id, subject, important FROM subjects WHERE grade_id = ?", grade_id)
+        subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id)
         print(subjects)
         return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
 
@@ -280,9 +280,9 @@ def add_subject():
 
     subject = request.form.get('subject').lower()
 
-    db.execute("INSERT INTO subjects (subject, grade_id, important) VALUES (?, ?, ?)", subject, grade_id, 0)  
+    db.execute("INSERT INTO subjects (subject_name, grade_id, important) VALUES (?, ?, ?)", subject, grade_id, 0)  
 
-    subjects = db.execute("SELECT subject_id, subject, important FROM subjects WHERE grade_id = ?", grade_id)
+    subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id)
     return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
 
 @app.route('/del-subject', methods=["POST"])
@@ -298,15 +298,32 @@ def del_subject():
     db.execute("DELETE FROM subjects WHERE subject_id = ? AND grade_id = ?", subject, grade_id)
 
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
-    subjects = db.execute("SELECT subject_id, subject, important FROM subjects WHERE grade_id = ?", grade_id)
+    subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id)
 
     return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
 
-@app.route('/marks')
+@app.route('/marks', methods=["POST", "GET"])
 @login_required
 def marks():
     uid = session.get("user_id")
-    return render_template("marks.html")
+    grades = db.execute("SELECT grade_id, grade FROM grades WHERE user_id = ?", uid)
+
+    if request.method == 'GET':
+        return render_template("marks.html", grades=grades)
+
+    else:
+        grade = request.form.get('grade')
+        term = request.form.get('term')
+
+        grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+        terms = db.execute("SELECT term FROM terms WHERE grade_id = ?", grade_id[0]['grade_id'])
+
+        subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id[0]['grade_id'])
+        print(subjects)
+
+        return render_template("marks.html", grades=grades, terms=terms, selected_grade=grade, subjects=subjects, selected_term=term)
+
+        
 
 @app.route('/stats')
 @login_required
