@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+<!-- Also by ChatGPT -->
+<div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="card p-4 shadow" style="width: 100%; max-width: 400px;">
+        <div class="text-center">
+            <h2 class="mb-4">Create an Account</h2>
+        </div>
+        <form action="/register" method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Create a password" required>
+            </div>
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirmation" class="form-control" placeholder="Re-enter your password" required>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success btn-lg">Register</button>
+            </div>
+        </form>
+        <hr class="my-4">
+        <div class="text-center">
+            <small>Already have an account? <a href="/login" class="text-decoration-none">Log in here</a>.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

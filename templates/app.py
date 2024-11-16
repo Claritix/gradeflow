@@ -109,18 +109,15 @@ def register():
         return redirect("/")
 
 @app.route('/', methods=["GET", "POST"])
-@login_required
 def dashboard():
-    uid = session.get("user_id")
-
-    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    grades = db.execute("SELECT grade FROM grades")
     grades = [grade['grade'] for grade in grades]
 
     if request.method == 'POST':
         grade = request.form.get('grade')
         term = request.form.get('term')
         
-        grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+        grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ?", grade)
         grade_id = grade_id[0]['grade_id']
 
         terms = db.execute("SELECT term FROM terms WHERE grade_id = ?", grade_id)
@@ -158,25 +155,21 @@ def dashboard():
         return render_template("dashboardempty.html", grades=grades)
 
 @app.route('/', methods=["GET", "POST"])
-@login_required
 @no_subjects
 def no_subjects():
-    uid = session.get("user_id")
-    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    grades = db.execute("SELECT grade FROM grades")
     grades = [grade['grade'] for grade in grades]
 
     return render_template("dashboard.html", grades=grades)
 
 @app.route('/grades', methods=["GET", "POST"])
-@login_required
 def grades():
-    uid = session.get("user_id")
-    grades = db.execute("SELECT grade_id, grade FROM grades WHERE user_id = ? ORDER BY grade ASC", uid)
+    grades = db.execute("SELECT grade_id, grade FROM grades ORDER BY grade ASC")
 
     if request.method == 'POST':
         new_grade = request.form.get('newGrade')
         
-        db.execute("INSERT INTO grades (grade, user_id) VALUES (?, ?)", new_grade, uid)
+        db.execute("INSERT INTO grades (grade) VALUES (?)", new_grade)
 
         return redirect(url_for('grades'))
 
@@ -184,20 +177,16 @@ def grades():
         return render_template("grades.html", grades=grades)
     
 @app.route('/del-grade', methods=["POST"])
-@login_required
 def del_grades():
-    uid = session.get("user_id")
     grade_id = request.form.get('grade')
-    db.execute("DELETE FROM grades WHERE grade_id = ? AND user_id = ?", grade_id, uid)
-    db.execute("DELETE FROM subjects WHERE grade_id = ? AND user_id = ?", grade_id, uid)
+    db.execute("DELETE FROM grades WHERE grade_id = ?", grade_id)
+    db.execute("DELETE FROM subjects WHERE grade_id = ?", grade_id)
 
     return redirect(url_for('grades'))
 
 @app.route('/terms', methods=["GET", "POST"])
-@login_required
 def terms():
-    uid = session.get("user_id")
-    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    grades = db.execute("SELECT grade FROM grades")
     grades = [grade['grade'] for grade in grades]
 
     if request.method == 'GET':
@@ -205,7 +194,7 @@ def terms():
     
     else:
         grade = request.form.get('grade')
-        grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+        grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ?", grade)
         grade_id = grade_id[0]['grade_id']
 
         terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
@@ -213,14 +202,12 @@ def terms():
         return render_template("terms.html", grades=grades, selected_grade=grade, terms=terms)
 
 @app.route('/add-term', methods=['POST'])
-@login_required
 def addTerm():
-    uid = session.get("user_id")
-    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    grades = db.execute("SELECT grade FROM grades")
     grades = [grade['grade'] for grade in grades]
 
     grade = request.form.get('grade')
-    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ?", grade)
     grade_id = grade_id[0]['grade_id']
     
     term = request.form.get('new_term')
@@ -231,11 +218,9 @@ def addTerm():
     return render_template("terms.html", grades=grades, selected_grade=grade, terms=terms)
 
 @app.route('/del-term', methods=["POST"])
-@login_required
 def del_terms():
-    uid = session.get("user_id")
     grade = request.form.get('grade')
-    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ?", grade)
     grade_id = grade_id[0]['grade_id']
 
     term_id = request.form.get('term_id')
@@ -243,14 +228,13 @@ def del_terms():
     db.execute("DELETE FROM terms WHERE grade_id = ? AND term_id = ?", grade_id, term_id)    
     db.execute("DELETE FROM subjects WHERE grade_id = ? AND term_id = ?", grade_id, term_id)
 
-    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    grades = db.execute("SELECT grade FROM grades")
     grades = [grade['grade'] for grade in grades]
     terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
     return render_template("terms.html", grades=grades, selected_grade=grade, terms=terms)
 
     
 @app.route('/subjects', methods=["GET", "POST"])
-@login_required
 def subjects():
     if request.method == 'GET':
         return render_template("subjects.html")
@@ -259,20 +243,14 @@ def subjects():
         return redirect(url_for('grade'))
 
 @app.route('/marks')
-@login_required
 def marks():
-    uid = session.get("user_id")
     return render_template("marks.html")
 
 @app.route('/stats')
-@login_required
 def stats():
-    uid = session.get("user_id")
     return render_template("stats.html")
 
 @app.route('/settings')
-@login_required
 def settings():
-    uid = session.get("user_id")
     return render_template("settings.html")
 

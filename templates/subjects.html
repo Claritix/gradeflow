@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Grades
+{% endblock %}
+
+{% block active_grades %}aria-current="page"{% endblock %}
+{% block active_grades2 %}active{% endblock %}
+
+
+{% block main %}
+<div class="d-flex mb-4">
+    <button class="btn btn-lg btn-primary switch-btn" onclick="window.location.href='/grades'">
+      <i class="bi bi-pencil-square"></i> Grade
+    </button>
+    <button class="btn btn-lg btn-secondary switch-btn" onclick="window.location.href='/terms'">
+      <i class="bi bi-calendar-check"></i> Terms
+    </button>
+    <button class="btn btn-lg btn-success switch-btn " onclick="window.location.href='/subjects'">
+      <i class="bi bi-book"></i> Subjects
+    </button>
+</div>
+{% endblock %}

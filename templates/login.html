@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Log In
+{% endblock %}
+
+{% block main %}
+<!-- Code by ChatGPT -->
+<div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="card p-4 shadow" style="width: 100%; max-width: 400px;">
+        <div class="text-center">
+            <h2 class="mb-4">Welcome to GradeFlow</h2>
+        </div>
+        <form action="/login" method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="Enter your username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">Log In</button>
+            </div>
+        </form>
+        <hr class="my-4">
+        <div class="text-center">
+            <small>Don't have an account? <a href="/register" class="text-decoration-none">Sign up here</a>.</small>
+        </div>
+    </div>
+</div>
+{% endblock %}

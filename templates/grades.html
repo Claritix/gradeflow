@@ -9,5 +9,52 @@
 
 
 {% block main %}
-    <h1>Grades</h1>
+<div class="d-flex mb-4">
+    <button class="btn btn-lg btn-primary switch-btn" onclick="window.location.href='/grades'">
+      <i class="bi bi-pencil-square"></i> Grade
+    </button>
+    <button class="btn btn-lg btn-secondary switch-btn" onclick="window.location.href='/terms'">
+      <i class="bi bi-calendar-check"></i> Terms
+    </button>
+    <button class="btn btn-lg btn-success switch-btn " onclick="window.location.href='/subjects'">
+      <i class="bi bi-book"></i> Subjects
+    </button>
+  </div>
+
+<div class="mt-4" style="margin-left: 10px;">
+    <h3>Manage Grades</h3>
+
+    <!-- Add Grade Button -->
+    <button class="btn btn-primary mb-3" id="addGradeBtn" onclick="toggleAddGradeInput()">
+        Add Grade
+    </button>
+
+    <!-- New Grade Input Field (hidden initially) -->
+    <div id="addGradeForm" class="mb-3" style="display: none;">
+        <form action="/grades" method="POST" class="d-flex">
+            <input type="number" class="form-control" name="newGrade" placeholder="Enter new grade" required>
+            <button type="submit" class="btn btn-success ml-2">Add</button>
+        </form>
+    </div>
+
+    <!-- Grades List -->
+    <ul class="list-group">
+        {% for grade in grades %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            Grade {{ grade.grade }}
+            <div class="btn-group">
+            <form action="/del-grade" method="post">
+                <button class="btn btn-danger btn-sm" type="submit" value="{{ grade.grade_id }}" name="grade">
+                    Delete
+                </button>
+            </form>
+            </div>
+        </li>
+        {% else %}
+        <li class="list-group-item">
+            No grades available. Click "Add Grade" to create a new one.
+        </li>
+        {% endfor %}
+    </ul>
+</div>
 {% endblock %}
