@@ -7,7 +7,6 @@
 {% block active_grades %}aria-current="page"{% endblock %}
 {% block active_grades2 %}active{% endblock %}
 
-
 {% block main %}
 <div class="d-flex mb-4">
     <button class="btn btn-lg btn-primary switch-btn" onclick="window.location.href='/grades'">
@@ -19,5 +18,61 @@
     <button class="btn btn-lg btn-success switch-btn " onclick="window.location.href='/subjects'">
       <i class="bi bi-book"></i> Subjects
     </button>
+</div>
+
+<div class="subject-root" style="margin-left: 10px;">
+  <h3>Manage Subjects</h3>
+  <div class="main1">
+    <form id="selector1" action="/subjects" method="post">
+        <div class="dropdown">
+            <a class="btn btn-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Grade {{ selected_grade }}
+            </a>
+            <ul class="dropdown-menu" id="grade-selector">
+                {% for grade in grades %}
+                    <li><a class="dropdown-item" href="#" onclick="setDropdownValueTwo('{{ grade.grade }}')">Grade {{ grade.grade }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <input type="hidden" name="grade" id="grade-input" value="{{ selected_grade }}">
+    </form>
+  </div>
+  
+{% if selected_grade %}
+  <!-- Add Subject Button -->
+  <button class="btn btn-primary mb-3 addsubject" id="addGradeBtn" onclick="toggleAddGradeInput()">
+    Add Subject
+  </button>
+
+  <!-- New Subject Input Field (hidden initially) -->
+  <div id="addGradeForm" class="mb-3" style="display: none;">
+    <form action="/add-subject" method="POST" class="d-flex">
+      <input type="hidden" name="grade" value="{{ selected_grade }}">
+      <input type="text" class="form-control" name="subject" placeholder="Enter new subject" required>
+      <button type="submit" class="btn btn-success ml-2">Add</button>
+    </form>
+  </div>
+
+  <!-- Subjects List -->
+  <ul class="list-group">
+    {% for subject in subjects %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+          {{ subject.subject.capitalize() }}
+          <div class="btn-group">
+            <form action="/del-subject" method="post">
+                <input type="hidden" name="grade" value="{{ selected_grade }}">
+                <button class="btn btn-danger btn-sm" type="submit" value="{{ subject.subject_id }}" name="subject">
+                    Delete
+                </button>
+            </form>
+          </div>
+      </li>
+    {% else %}
+      <li class="list-group-item">
+        No subjects available. Click "Add Subject" to create a new one.
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
 </div>
 {% endblock %}

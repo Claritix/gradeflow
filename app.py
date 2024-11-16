@@ -252,11 +252,55 @@ def del_terms():
 @app.route('/subjects', methods=["GET", "POST"])
 @login_required
 def subjects():
+    uid = session.get("user_id")
+    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+
     if request.method == 'GET':
-        return render_template("subjects.html")
+        return render_template("subjects.html", grades=grades)
     
     else:
-        return redirect(url_for('grade'))
+        grade = request.form.get('grade')
+
+        grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+        grade_id = grade_id[0]['grade_id']
+        terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
+
+        subjects = db.execute("SELECT subject_id, subject, important FROM subjects WHERE grade_id = ?", grade_id)
+        print(subjects)
+        return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
+
+@app.route('/add-subject', methods=["POST"])
+@login_required
+def add_subject():
+    uid = session.get("user_id")
+    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    grade = request.form.get('grade')
+    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+    grade_id = grade_id[0]['grade_id']
+
+    subject = request.form.get('subject').lower()
+
+    db.execute("INSERT INTO subjects (subject, grade_id, important) VALUES (?, ?, ?)", subject, grade_id, 0)  
+
+    subjects = db.execute("SELECT subject_id, subject, important FROM subjects WHERE grade_id = ?", grade_id)
+    return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
+
+@app.route('/del-subject', methods=["POST"])
+@login_required
+def del_subject():
+    uid = session.get("user_id")
+    grade = request.form.get('grade')
+    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+    grade_id = grade_id[0]['grade_id']
+
+    subject = request.form.get('subject')
+
+    db.execute("DELETE FROM subjects WHERE subject_id = ? AND grade_id = ?", subject, grade_id)
+
+    grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    subjects = db.execute("SELECT subject_id, subject, important FROM subjects WHERE grade_id = ?", grade_id)
+
+    return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
 
 @app.route('/marks')
 @login_required
