@@ -7,8 +7,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import no_subjects, login_required, apology
 
+# Setup flask
 app = Flask(__name__)
 
+# Setup session info
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
@@ -16,6 +18,7 @@ Session(app)
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///gradeflow.db")
 
+# Route for login, homepage
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -53,7 +56,8 @@ def login():
     # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("login.html")
-    
+
+# Logout and clear session
 @app.route("/logout")
 def logout():
     """Log user out"""
@@ -64,6 +68,7 @@ def logout():
     # Redirect user to login form
     return redirect("/")
 
+# Add new account to db and log in
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
@@ -108,44 +113,60 @@ def register():
         flash("Registered!")
         return redirect("/")
 
+# Dashboard for marks
 @app.route('/', methods=["GET", "POST"])
 @login_required
 def dashboard():
+    # Get user id
     uid = session.get("user_id")
 
+    # Get all grades associated with user
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
     grades = [grade['grade'] for grade in grades]
 
+    # User reached route via POST (as by submitting a form via POST)
     if request.method == 'POST':
+        # Get grade and term selected by user
         grade = request.form.get('grade')
         term = request.form.get('term')
         
+        # Get grade_id of selected grade
         grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
         grade_id = grade_id[0]['grade_id']
 
+        # Get all terms associated with the grade
         terms = db.execute("SELECT term FROM terms WHERE grade_id = ?", grade_id)
         terms = [term['term'] for term in terms]
 
+        # Check if term has been submitted and get term_id for term
         if term:
             term_id = db.execute("SELECT term_id FROM terms WHERE grade_id = ? AND term = ?", grade_id, term)
             term_id = term_id[0]['term_id']
 
+        # If both grade and term have been submitted, proceed with calculating data
         if grade and term:
+            # Get the amount of subjects in the grade
             totalSubjects = db.execute("SELECT COUNT(subject_name) FROM subjects WHERE grade_id=?", grade_id)
             totalSubjects = totalSubjects[0]['COUNT(subject_name)']
 
+            # Get sum of all marks of the term
             totalMarks = db.execute("SELECT sum(score) FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id=?", grade_id, term_id)
             totalMarks = totalMarks[0]['sum(score)']
 
+            # Get average marks of the term
             avgMarks = db.execute("SELECT avg(score) FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id=?", grade_id, term_id)
             avgMarks = round(avgMarks[0]['avg(score)'], 2)
-            
+
+            # Get all subjects
             subjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id = ? AND term_id = ? ORDER BY score DESC", grade_id, term_id)
 
+            # Get top 3 best subjects of the term
             bestSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score DESC LIMIT 3", grade_id, term_id)
             
+            # Get worst 3 subjects of the term
             worstSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score ASC LIMIT 3", grade_id, term_id)
 
+            # Get randon subjects not in the above 2 lists
             randomSubjects = []
 
             for subject in subjects:
@@ -153,21 +174,25 @@ def dashboard():
                 if subject not in bestSubjects and subject not in worstSubjects:
                     # Add subject to randomSubjects
                     randomSubjects.append(subject)
-                # Break the loop if randomSubjects has more than 3 subjects
+                # Break the loop if randomSubjects has more than 5 subjects
                 if len(randomSubjects) >= 5:
                     break
-
+            
+            # Render page with everything needed
             return render_template("dashboard.html", 
                                    grades=grades, terms=terms, selected_grade=grade, selected_term=term, 
                                    subject_count=totalSubjects, total_marks=totalMarks, avg_marks = avgMarks,
                                    best_subjects=bestSubjects, worst_subjects=worstSubjects, random_subjects=randomSubjects
                                 )
         
+        # If grade or term hasn't been chosen yet
         return render_template("dashboardempty.html", grades=grades, terms=terms, selected_grade=grade, selected_term=term)
     
+    # User reached route via GET (as by clicking a link)
     elif request.method == 'GET':
         return render_template("dashboardempty.html", grades=grades)
 
+# No subjects have been added yet
 @app.route('/', methods=["GET", "POST"])
 @login_required
 @no_subjects
@@ -178,199 +203,349 @@ def no_subjects():
 
     return render_template("dashboard.html", grades=grades)
 
+# Grade editing page
 @app.route('/grades', methods=["GET", "POST"])
 @login_required
 def grades():
+    # Get user id and grades associated with user
     uid = session.get("user_id")
     grades = db.execute("SELECT grade_id, grade FROM grades WHERE user_id = ? ORDER BY grade ASC", uid)
 
+    # User reached route via POST (as by submitting a form via POST)
     if request.method == 'POST':
+        # Get new grade needed to be added
         new_grade = request.form.get('newGrade')
         
+        # Add grade into db
         db.execute("INSERT INTO grades (grade, user_id) VALUES (?, ?)", new_grade, uid)
 
+        # Return to grades page
         return redirect(url_for('grades'))
 
+    # User reached route via GET (as by clicking a link)
     else:
+        # Return grade editing page
         return render_template("grades.html", grades=grades)
-    
+
+# Delete grade
 @app.route('/del-grade', methods=["POST"])
 @login_required
 def del_grades():
+    # Get the user id and grade_id from the form
     uid = session.get("user_id")
-    grade_id = request.form.get('grade')
-    db.execute("DELETE FROM grades WHERE grade_id = ? AND user_id = ?", grade_id, uid)
-    db.execute("DELETE FROM subjects WHERE grade_id = ? AND user_id = ?", grade_id, uid)
+    grade_id = request.form.get("grade")
+    
+    if not grade_id:
+        return apology("No grade selected for deletion.", 403)
 
-    return redirect(url_for('grades'))
+    # Ensure the grade belongs to the user (prevent other users from deleting it)
+    grade = db.execute("SELECT * FROM grades WHERE grade_id = ? AND user_id = ?", grade_id, uid)
 
+    if not grade:
+        return apology("This grade does not belong to you or does not exist.", 403)
+    
+    # Step 1: Delete all marks related to this grade (using subjects and terms)
+    db.execute("""
+        DELETE FROM marks
+        WHERE subject_id IN (
+            SELECT subject_id FROM subjects
+            WHERE grade_id = ?
+        ) OR term_id IN (
+            SELECT term_id FROM terms
+            WHERE grade_id = ?
+        );
+    """, grade_id, grade_id)
+
+    # Step 2: Delete subjects related to this grade
+    db.execute("""
+        DELETE FROM subjects
+        WHERE grade_id = ?;
+    """, grade_id)
+    
+    # Step 3: Delete terms related to this grade
+    db.execute("""
+        DELETE FROM terms
+        WHERE grade_id = ?;
+    """, grade_id)
+    
+    # Step 4: Delete the grade itself
+    db.execute("""
+        DELETE FROM grades
+        WHERE grade_id = ?;
+    """, grade_id)
+    
+    return redirect("/grades")
+
+# Show and add terms
 @app.route('/terms', methods=["GET", "POST"])
 @login_required
 def terms():
+    # Get user_id and grades
     uid = session.get("user_id")
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
     grades = [grade['grade'] for grade in grades]
 
+    # Check if user reached via GET and return terms list
     if request.method == 'GET':
         return render_template("terms.html", grades=grades)
     
+    # If user reached via POST
     else:
+        # Get submitted grade and grade_id
         grade = request.form.get('grade')
         grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
         grade_id = grade_id[0]['grade_id']
 
+        # Get all terms associated with the grade
         terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
         
+        # Return template with all required data
         return render_template("terms.html", grades=grades, selected_grade=grade, terms=terms)
 
+# Add new term
 @app.route('/add-term', methods=['POST'])
 @login_required
 def addTerm():
+    # Get user_id and all grades associated with user_id
     uid = session.get("user_id")
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
     grades = [grade['grade'] for grade in grades]
 
+    # Get submitted grade and grade_id
     grade = request.form.get('grade')
     grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
     grade_id = grade_id[0]['grade_id']
     
+    # Get requested new term
     term = request.form.get('new_term')
     
+    # Add term into associated grade
     db.execute("INSERT INTO terms (term, grade_id) VALUES (?, ?)", term, grade_id)
+
+    # Get new list of terms
     terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
 
+    # Return template with new data
     return render_template("terms.html", grades=grades, selected_grade=grade, terms=terms)
 
+# Delete a term
 @app.route('/del-term', methods=["POST"])
 @login_required
 def del_terms():
+    # Get user id from session
     uid = session.get("user_id")
+    
+    # Get the selected grade and term_id from the form
     grade = request.form.get('grade')
-    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
-    grade_id = grade_id[0]['grade_id']
-
     term_id = request.form.get('term_id')
     
-    db.execute("DELETE FROM terms WHERE grade_id = ? AND term_id = ?", grade_id, term_id)    
-    db.execute("DELETE FROM subjects WHERE grade_id = ? AND term_id = ?", grade_id, term_id)
+    # Fetch the grade_id for the given grade and user_id
+    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+    
+    # Ensure the grade exists and belongs to the user
+    if not grade_id:
+        return apology("This grade does not exist or does not belong to you.", 403)
+    
+    grade_id = grade_id[0]['grade_id']
+    
+    # Ensure the term exists
+    term = db.execute("SELECT * FROM terms WHERE term_id = ? AND grade_id = ?", term_id, grade_id)
+    if not term:
+        return apology("This grade does not exist or does not belong to you.", 403)
 
+    # Step 1: Delete all marks associated with the selected term and grade
+    db.execute("""
+        DELETE FROM marks
+        WHERE term_id = ? AND subject_id IN (
+            SELECT subject_id FROM subjects WHERE grade_id = ?
+        );
+    """, term_id, grade_id)
+
+    # Step 2: Delete all subjects associated with the selected term and grade
+    db.execute("""
+        DELETE FROM subjects
+        WHERE grade_id = ? AND subject_id IN (
+            SELECT subject_id FROM subjects WHERE grade_id = ? AND term_id = ?
+        );
+    """, grade_id, grade_id, term_id)
+
+    # Step 3: Delete the term itself
+    db.execute("DELETE FROM terms WHERE term_id = ? AND grade_id = ?", term_id, grade_id)
+
+    # Fetch updated grades and terms after deletion
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
     grades = [grade['grade'] for grade in grades]
     terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
+
+    # Return updated terms page
     return render_template("terms.html", grades=grades, selected_grade=grade, terms=terms)
 
-    
+# Check subjects
 @app.route('/subjects', methods=["GET", "POST"])
 @login_required
 def subjects():
+    # Get user_id and grades associated with user
     uid = session.get("user_id")
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
 
+    # Check if user reached via GET
     if request.method == 'GET':
         return render_template("subjects.html", grades=grades)
     
+    # If user reached via POST
     else:
+        # Get requested grade and grade_id
         grade = request.form.get('grade')
-
         grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
         grade_id = grade_id[0]['grade_id']
-        terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
 
+        # Get all subjects associated with grade
         subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id)
-        print(subjects)
+
+        # Return template with data
         return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
 
+# Add new subject
 @app.route('/add-subject', methods=["POST"])
 @login_required
 def add_subject():
+    # Get user_id and all grades associated with user
     uid = session.get("user_id")
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+
+    # Get requested grade and grade_id
     grade = request.form.get('grade')
     grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
     grade_id = grade_id[0]['grade_id']
 
+    # Get new subject an convert to lowercase
     subject = request.form.get('subject').lower()
 
+    # Add subject into db
     db.execute("INSERT INTO subjects (subject_name, grade_id, important) VALUES (?, ?, ?)", subject, grade_id, 0)  
 
+    # Get new subject list
     subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id)
+
+    # Return template with new data
     return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
 
+# Delete subject
 @app.route('/del-subject', methods=["POST"])
 @login_required
 def del_subject():
+    # Get user id from session
     uid = session.get("user_id")
+    
+    # Get the selected grade and subject from the form
     grade = request.form.get('grade')
+    subject_id = request.form.get('subject')
+
+    # Fetch the grade_id for the given grade and user_id
     grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+
+    # Ensure the grade exists and belongs to the user
+    if not grade_id:
+        return apology("This grade does not exist or does not belong to you.", 403)
+    
     grade_id = grade_id[0]['grade_id']
+    
+    # Ensure the subject exists in the selected grade
+    subject = db.execute("SELECT subject_id FROM subjects WHERE subject_id = ? AND grade_id = ?", subject_id, grade_id)
+    if not subject:
+        return apology("This subject does not exist or does not belong to the selected grade.", 403)
 
-    subject = request.form.get('subject')
+    # Step 1: Delete all marks associated with the subject
+    db.execute("DELETE FROM marks WHERE subject_id = ?", subject_id)
 
-    db.execute("DELETE FROM subjects WHERE subject_id = ? AND grade_id = ?", subject, grade_id)
+    # Step 2: Delete the subject
+    db.execute("DELETE FROM subjects WHERE subject_id = ? AND grade_id = ?", subject_id, grade_id)
 
+    # Fetch updated grades and subjects after deletion
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
+    grades = [grade['grade'] for grade in grades]
     subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id)
 
+    # Return updated subjects page
     return render_template("subjects.html", grades=grades, subjects=subjects, selected_grade=grade)
 
+# Marks page
 @app.route('/marks', methods=["POST", "GET"])
 @login_required
 def marks():
+    # Get user_id and grades associated with user
     uid = session.get("user_id")
     grades = db.execute("SELECT grade_id, grade FROM grades WHERE user_id = ?", uid)
 
+    # If user reached via link
     if request.method == 'GET':
         return render_template("marks.html", grades=grades)
 
+    # If user reached via post
     else:
+        # Get selected grade and term
         grade = request.form.get('grade')
         term = request.form.get('term')
 
+        # Get grade id and all terms associated with grade
         grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
         terms = db.execute("SELECT term FROM terms WHERE grade_id = ?", grade_id[0]['grade_id'])
         
-
+        # Get all subjects associated with grade
         subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id[0]['grade_id'])
-        print(subjects)
 
+        # If user selected term
         if term:
+            # Get term_id
             term_id = db.execute("SELECT term_id FROM terms WHERE term = ? AND grade_id = ?", term, grade_id[0]['grade_id'])
             term_id = term_id[0]['term_id']
 
+            # Get score for each subject
             for subject in subjects:
                 result = db.execute("SELECT marks.score FROM subjects JOIN marks ON subjects.subject_id = marks.subject_id WHERE marks.term_id = ? AND subjects.subject_id = ?", term_id, subject['subject_id'])
 
                 # Assign the score or set a default value if no score is found
                 subject['score'] = result[0]['score'] if result else 0
 
+        # Return template with data
         return render_template("marks.html", grades=grades, terms=terms, selected_grade=grade, subjects=subjects, selected_term=term)
 
+# Submit marks
 @app.route('/submit-marks', methods=["POST"])
 @login_required
 def submit_marks():
+    # Get user_id
     uid = session.get("user_id")
+
+    # Get requested grade, term and respective grade_id, term_id
     grade = request.form.get('grade')
     term = request.form.get('term')
     grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
     term_id = db.execute("SELECT term_id FROM terms WHERE term = ? AND grade_id = ?", term, grade_id[0]['grade_id'])
     term_id = term_id[0]['term_id']
 
+    # Get all subjects associated with grade
     subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id[0]['grade_id'])
 
+    # Get all requested marks and insert into db
     for subject in subjects:
         subject_id = subject['subject_id']
+        # Get subject from website
         subject['score'] = request.form.get(f'marks_{subject_id}')
 
+        # Check if score was submitted and insert into db
         if subject['score']:
                 db.execute("INSERT INTO marks (subject_id, term_id, score) VALUES (?, ?, ?) ON CONFLICT(subject_id, term_id) DO UPDATE SET score = excluded.score", subject['subject_id'], term_id, subject['score'])
-    
+    # Redirect to marks
     return redirect(url_for('marks')) 
 
+# Settings page
 @app.route('/settings')
 @login_required
 def settings():
     return render_template("settings.html")
 
+# Change password
 @app.route('/change-password', methods=["POST"])
 @login_required
 def change_password():
@@ -409,6 +584,7 @@ def change_password():
     # Return to login clearing session ID
     return redirect("/login")
 
+# Change username
 @app.route("/change-username", methods=["POST"])
 def change_username():
     if request.method == "POST":
@@ -437,9 +613,9 @@ def change_username():
         # Update the username
         db.execute("UPDATE users SET username = ? WHERE id = ?", new_username, uid)
 
-        flash("Username updated successfully!", "success")
         return redirect("/login")
 
+# Delete account
 @app.route("/reset", methods=["POST"])
 def reset():
     # Ensure user is logged in (this check is required to make sure the user is authenticated)
@@ -494,10 +670,6 @@ def reset():
         DELETE FROM users
         WHERE id = ?;
     """, user_id)
-    
-    # Clear the session
-    session.clear()
-    flash("Your data has been reset. Please log in again.", "warning")
     
     return redirect("/login")
 
