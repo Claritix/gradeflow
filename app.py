@@ -324,6 +324,8 @@ def addTerm():
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
     grades = [grade['grade'] for grade in grades]
 
+    grade = request.form.get('grade')
+    
     # Get submitted grade and validate it belongs to user
     grade_id_result = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
     if not grade_id_result:
