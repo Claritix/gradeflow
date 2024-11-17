@@ -139,17 +139,28 @@ def dashboard():
 
             avgMarks = db.execute("SELECT avg(score) FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id=?", grade_id, term_id)
             avgMarks = round(avgMarks[0]['avg(score)'], 2)
+            
+            subjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id = ? AND term_id = ? ORDER BY score DESC", grade_id, term_id)
 
             bestSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score DESC LIMIT 3", grade_id, term_id)
             
             worstSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score ASC LIMIT 3", grade_id, term_id)
-            
-            importantSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? AND important = 1 LIMIT 3", grade_id, term_id) 
+
+            randomSubjects = []
+
+            for subject in subjects:
+                # Check if subject is not in bestSubjects or worstSubjects
+                if subject not in bestSubjects and subject not in worstSubjects:
+                    # Add subject to randomSubjects
+                    randomSubjects.append(subject)
+                # Break the loop if randomSubjects has more than 3 subjects
+                if len(randomSubjects) >= 5:
+                    break
 
             return render_template("dashboard.html", 
                                    grades=grades, terms=terms, selected_grade=grade, selected_term=term, 
                                    subject_count=totalSubjects, total_marks=totalMarks, avg_marks = avgMarks,
-                                   best_subjects=bestSubjects, worst_subjects=worstSubjects, important_subjects=importantSubjects
+                                   best_subjects=bestSubjects, worst_subjects=worstSubjects, random_subjects=randomSubjects
                                 )
         
         return render_template("dashboardempty.html", grades=grades, terms=terms, selected_grade=grade, selected_term=term)
