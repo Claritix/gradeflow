@@ -57,13 +57,14 @@
                         <input type="number" id="subject_{{ subject.subject_id }}" 
                                name="marks_{{ subject.subject_id }}" 
                                class="form-control" 
-                               placeholder="0" required>
+                               placeholder="{{ subject['score'] }}">
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        
+        <input type="hidden" name="grade" id="grade-input" value="{{ selected_grade }}">
+        <input type="hidden" name="term" id="term-input" value="{{ selected_term }}">
         <button type="submit" class="btn btn-success btn-lg mt-3">Submit Marks</button>
     </form>
 

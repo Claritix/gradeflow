@@ -138,7 +138,7 @@ def dashboard():
             totalMarks = totalMarks[0]['sum(score)']
 
             avgMarks = db.execute("SELECT avg(score) FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id=?", grade_id, term_id)
-            avgMarks = avgMarks[0]['avg(score)']
+            avgMarks = round(avgMarks[0]['avg(score)'], 2)
 
             bestSubjects = db.execute("SELECT subject_name, score FROM marks JOIN subjects on marks.subject_id = subjects.subject_id WHERE grade_id=? AND term_id = ? ORDER BY score DESC LIMIT 3", grade_id, term_id)
             
@@ -317,13 +317,43 @@ def marks():
 
         grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
         terms = db.execute("SELECT term FROM terms WHERE grade_id = ?", grade_id[0]['grade_id'])
+        
 
         subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id[0]['grade_id'])
         print(subjects)
 
+        if term:
+            term_id = db.execute("SELECT term_id FROM terms WHERE term = ? AND grade_id = ?", term, grade_id[0]['grade_id'])
+            term_id = term_id[0]['term_id']
+
+            for subject in subjects:
+                result = db.execute("SELECT marks.score FROM subjects JOIN marks ON subjects.subject_id = marks.subject_id WHERE marks.term_id = ? AND subjects.subject_id = ?", term_id, subject['subject_id'])
+
+                # Assign the score or set a default value if no score is found
+                subject['score'] = result[0]['score'] if result else 0
+
         return render_template("marks.html", grades=grades, terms=terms, selected_grade=grade, subjects=subjects, selected_term=term)
 
-        
+@app.route('/submit-marks', methods=["POST"])
+@login_required
+def submit_marks():
+    uid = session.get("user_id")
+    grade = request.form.get('grade')
+    term = request.form.get('term')
+    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+    term_id = db.execute("SELECT term_id FROM terms WHERE term = ? AND grade_id = ?", term, grade_id[0]['grade_id'])
+    term_id = term_id[0]['term_id']
+
+    subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id[0]['grade_id'])
+
+    for subject in subjects:
+        subject_id = subject['subject_id']
+        subject['score'] = request.form.get(f'marks_{subject_id}')
+
+        if subject['score']:
+                db.execute("INSERT INTO marks (subject_id, term_id, score) VALUES (?, ?, ?) ON CONFLICT(subject_id, term_id) DO UPDATE SET score = excluded.score", subject['subject_id'], term_id, subject['score'])
+    
+    return redirect(url_for('marks')) 
 
 @app.route('/stats')
 @login_required
