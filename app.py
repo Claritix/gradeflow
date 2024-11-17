@@ -216,6 +216,19 @@ def grades():
         # Get new grade needed to be added
         new_grade = request.form.get('newGrade')
         
+                # Validate if grade is provided
+        if not new_grade:
+            return apology("grade must be provided", 400)
+            
+        # Validate grade format (assuming grades should be numbers or text)
+        if len(new_grade) > 20:
+            return apology("grade name too long", 400)
+
+        # Check if grade already exists for this user
+        existing_grade = db.execute("SELECT * FROM grades WHERE grade = ? AND user_id = ?", new_grade, uid)
+        if existing_grade:
+            return apology("grade already exists", 400)
+        
         # Add grade into db
         db.execute("INSERT INTO grades (grade, user_id) VALUES (?, ?)", new_grade, uid)
 
@@ -311,16 +324,33 @@ def addTerm():
     grades = db.execute("SELECT grade FROM grades WHERE user_id = ?", uid)
     grades = [grade['grade'] for grade in grades]
 
-    # Get submitted grade and grade_id
-    grade = request.form.get('grade')
-    grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
-    grade_id = grade_id[0]['grade_id']
+    # Get submitted grade and validate it belongs to user
+    grade_id_result = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
+    if not grade_id_result:
+        return apology("invalid grade selection", 403)
     
-    # Get requested new term
+    grade_id = grade_id_result[0]['grade_id']
+
+    # Validate new term
     term = request.form.get('new_term')
+    if not term:
+        return apology("term name cannot be empty", 400)
     
-    # Add term into associated grade
-    db.execute("INSERT INTO terms (term, grade_id) VALUES (?, ?)", term, grade_id)
+    # Validate term length
+    if len(term) > 20:
+        return apology("term name too long (maximum 20 characters)", 400)
+    
+    # Check if term already exists for this grade
+    existing_term = db.execute("SELECT term FROM terms WHERE term = ? AND grade_id = ?", term, grade_id)
+    if existing_term:
+        return apology("term already exists for this grade", 400)
+
+    try:
+        # Add term into associated grade
+        db.execute("INSERT INTO terms (term, grade_id) VALUES (?, ?)", term, grade_id)
+    except Exception as e:
+        return apology("error adding term to database", 500)
+
 
     # Get new list of terms
     terms = db.execute("SELECT term_id, term FROM terms WHERE grade_id = ? ORDER BY term ASC", grade_id)
@@ -418,11 +448,40 @@ def add_subject():
     grade_id = db.execute("SELECT grade_id FROM grades WHERE grade = ? AND user_id = ?", grade, uid)
     grade_id = grade_id[0]['grade_id']
 
-    # Get new subject an convert to lowercase
-    subject = request.form.get('subject').lower()
+    # Validate subject input
+    if not request.form.get('subject'):
+        return apology("subject name cannot be empty", 400)
 
-    # Add subject into db
-    db.execute("INSERT INTO subjects (subject_name, grade_id, important) VALUES (?, ?, ?)", subject, grade_id, 0)  
+    # Get new subject and convert to lowercase
+    subject = request.form.get('subject').lower().strip()
+
+    # Validate subject name length
+    if len(subject) < 2:
+        return apology("subject name too short (minimum 2 characters)", 400)
+    if len(subject) > 30:
+        return apology("subject name too long (maximum 30 characters)", 400)
+
+    # Check for invalid characters in subject name
+    if not subject.replace(" ", "").isalnum():
+        return apology("subject name can only contain letters, numbers and spaces", 400)
+
+    # Check if subject already exists in this grade
+    existing_subject = db.execute("SELECT subject_name FROM subjects WHERE subject_name = ? AND grade_id = ?", 
+                                subject, grade_id)
+    if existing_subject:
+        return apology("subject already exists in this grade", 400)
+
+    # Check maximum number of subjects per grade (if there's a limit)
+    subject_count = db.execute("SELECT COUNT(*) as count FROM subjects WHERE grade_id = ?", grade_id)
+    if subject_count[0]['count'] >= 20:  # Assuming max 20 subjects per grade
+        return apology("maximum number of subjects reached for this grade", 400)
+
+    try:
+        # Add subject into db
+        db.execute("INSERT INTO subjects (subject_name, grade_id, important) VALUES (?, ?, ?)", 
+                  subject, grade_id, 0)
+    except Exception as e:
+        return apology("error adding subject to database", 500)
 
     # Get new subject list
     subjects = db.execute("SELECT subject_id, subject_name, important FROM subjects WHERE grade_id = ?", grade_id)
@@ -535,7 +594,18 @@ def submit_marks():
 
         # Check if score was submitted and insert into db
         if subject['score']:
-                db.execute("INSERT INTO marks (subject_id, term_id, score) VALUES (?, ?, ?) ON CONFLICT(subject_id, term_id) DO UPDATE SET score = excluded.score", subject['subject_id'], term_id, subject['score'])
+            try:
+                score_float = float(subject['score'])
+                if score_float < 0 or score_float > 100:
+                    return apology(f"invalid score for {subject['subject_name']} (must be between 0 and 100)", 400)
+                
+                db.execute(
+                    "INSERT INTO marks (subject_id, term_id, score) VALUES (?, ?, ?) ON CONFLICT(subject_id, term_id) DO UPDATE SET score = excluded.score",
+                    subject_id, term_id, score_float
+                )
+            except ValueError:
+                return apology(f"invalid score format for {subject['subject_name']}", 400)
+        
     # Redirect to marks
     return redirect(url_for('marks')) 
 
