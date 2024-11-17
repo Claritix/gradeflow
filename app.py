@@ -369,6 +369,137 @@ def submit_marks():
 @app.route('/settings')
 @login_required
 def settings():
-    uid = session.get("user_id")
     return render_template("settings.html")
+
+@app.route('/change-password', methods=["POST"])
+@login_required
+def change_password():
+    # Ensure username was submitted
+    if not request.form.get("old"):
+        return apology("must provide old password", 403)
+
+    # Ensure password was submitted
+    elif not request.form.get("password"):
+        return apology("must provide new password", 403)
+
+    # Ensure the two passwords match
+    elif request.form.get("password") != request.form.get("confirmation"):
+        return apology("password don't match", 400)
+
+    # Initialize variables
+    old = request.form.get("old")
+    new = request.form.get("password")
+    confirmation = request.form.get("confirmation")
+
+    # Get user id
+    uid = session.get("user_id")
+
+    # Get current password hash
+    current_hash = db.execute("SELECT hash FROM users WHERE id = ?", uid)
+
+    # Check if submitted old password and current password match
+    # If not, return an apology
+    if not check_password_hash(current_hash[0]['hash'], old):
+        return apology("old password doesn't match", 400)
+
+    # Update to new password
+    new_hash = generate_password_hash(new)
+    db.execute("UPDATE users SET hash = ? WHERE id = ?", new_hash, uid)
+
+    # Return to login clearing session ID
+    return redirect("/login")
+
+@app.route("/change-username", methods=["POST"])
+def change_username():
+    if request.method == "POST":
+        # Ensure current password was submitted
+        if not request.form.get("current_password"):
+            return apology("must provide old password", 403)
+
+        # Ensure new username was submitted
+        elif not request.form.get("new_username"):
+            return apology("must provide new username", 403)
+
+        # Initialize variables
+        old_password = request.form.get("current_password")
+        new_username = request.form.get("new_username")
+
+        # Get user id from session
+        uid = session.get("user_id")
+
+        # Get current password hash
+        current_hash = db.execute("SELECT hash FROM users WHERE id = ?", uid)
+
+        # Check if the old password matches the current hash in the database
+        if not check_password_hash(current_hash[0]['hash'], old_password):
+            return apology("old password doesn't match", 400)
+
+        # Update the username
+        db.execute("UPDATE users SET username = ? WHERE id = ?", new_username, uid)
+
+        flash("Username updated successfully!", "success")
+        return redirect("/login")
+
+@app.route("/reset", methods=["POST"])
+def reset():
+    # Ensure user is logged in (this check is required to make sure the user is authenticated)
+    if not session.get("user_id"):
+        flash("You must be logged in to reset data.", "danger")
+        return redirect("/login")
+    
+    # Get the user id from session
+    user_id = session["user_id"]
+    
+    # Execute the SQL queries to delete all associated data in the correct order
+    db.execute("""
+        DELETE FROM marks
+        WHERE subject_id IN (
+            SELECT subject_id FROM subjects
+            WHERE grade_id IN (
+                SELECT grade_id FROM grades
+                WHERE user_id = ?
+            )
+        ) OR term_id IN (
+            SELECT term_id FROM terms
+            WHERE grade_id IN (
+                SELECT grade_id FROM grades
+                WHERE user_id = ?
+            )
+        );
+    """, user_id, user_id)
+
+    db.execute("""
+        DELETE FROM subjects
+        WHERE grade_id IN (
+            SELECT grade_id FROM grades
+            WHERE user_id = ?
+        );
+    """, user_id)
+    
+    db.execute("""
+        DELETE FROM terms
+        WHERE grade_id IN (
+            SELECT grade_id FROM grades
+            WHERE user_id = ?
+        );
+    """, user_id)
+    
+    db.execute("""
+        DELETE FROM grades
+        WHERE user_id = ?;
+    """, user_id)
+    
+    # Finally, delete the user from the users table
+    db.execute("""
+        DELETE FROM users
+        WHERE id = ?;
+    """, user_id)
+    
+    # Clear the session
+    session.clear()
+    flash("Your data has been reset. Please log in again.", "warning")
+    
+    return redirect("/login")
+
+    
 

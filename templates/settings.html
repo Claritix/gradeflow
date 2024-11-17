@@ -1,13 +1,87 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Dashboard
+    Settings
 {% endblock %}
 
 {% block active_settings %}aria-current="page"{% endblock %}
 {% block active_settings2 %}active{% endblock %}
 
-
 {% block main %}
-    <h1>Settings</h1>
+<div class="container mt-5">
+    <h2>Settings</h2>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Change Username</h5>
+            <form action="/change-username" method="POST">
+                <div class="mb-3">
+                    <label for="new_username" class="form-label">New Username</label>
+                    <input type="text" class="form-control" id="new_username" name="new_username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="current_password" class="form-label">Current Password</label>
+                    <input type="password" class="form-control" id="current_password" name="current_password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Change Username</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Change Password</h5>
+            <form action="/change-password" method="POST">
+                <div class="mb-3">
+                    <label for="current_password_password" class="form-label">Current Password</label>
+                    <input type="password" class="form-control" id="current_password_password" name="old" required>
+                </div>
+                <div class="mb-3">
+                    <label for="new_password" class="form-label">New Password</label>
+                    <input type="password" class="form-control" id="new_password" name="password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirmation" required>
+                </div>
+                <button type="submit" class="btn btn-success">Change Password</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title text-danger">Delete Account</h5>
+            <p class="text-muted">This will erase all data associated with your account. You will not be able to login with this username. This action cannot be undone.</p>
+            <button type="button" class="btn btn-danger" id="reset-btn">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal for Reset -->
+<div class="modal fade" id="resetConfirmationModal" tabindex="-1" aria-labelledby="resetConfirmationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="resetConfirmationModalLabel">Confirm Deletion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-danger">Are you sure you want to delete all data? This action is irreversible!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="/reset" method="POST">
+            <button type="submit" class="btn btn-danger">Yes, delete account.</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Show reset confirmation modal
+    document.getElementById('reset-btn').addEventListener('click', function () {
+        new bootstrap.Modal(document.getElementById('resetConfirmationModal')).show();
+    });
+</script>
 {% endblock %}
