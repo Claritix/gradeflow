@@ -366,12 +366,6 @@ def submit_marks():
     
     return redirect(url_for('marks')) 
 
-@app.route('/stats')
-@login_required
-def stats():
-    uid = session.get("user_id")
-    return render_template("stats.html")
-
 @app.route('/settings')
 @login_required
 def settings():
